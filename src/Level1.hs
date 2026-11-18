@@ -34,13 +34,22 @@ data Player = Player
   deriving (Eq, Show)
 
 parseName :: String -> Maybe String
-parseName = todo "1.1 name"
+parseName name 
+  | null name = Nothing
+  | otherwise = Just name
 
 parseScore :: String -> Maybe Integer
-parseScore = todo "1.1 score"
+parseScore score = readMaybe score
 
 parsePlayer :: String -> Maybe Player
-parsePlayer = todo "1.1 player"
+
+parseString :: String -> (String, String)
+parseString str = break (== ':') str
+
+parsePlayer player =
+  case parseString player of
+  (name, ':' : score) -> Player <$> parseName name <*> parseScore score
+  _ -> Nothing
 
 
 -- 1.2. Точка на плоскости.
@@ -55,13 +64,13 @@ data Point a = Point a a
 instance Applicative Point where
   pure x = Point x x
 
-  Point _ _ <*> Point _ _ = todo "1.2 <*>"
+  Point f g <*> Point x y = Point (f x) (g y)
 
 stretchPoint :: Num a => a -> Point a -> Point a
-stretchPoint = todo "1.2 stretchPoint"
+stretchPoint n p = (*n) <$> p
 
 sumPoints :: Num a => Point a -> Point a -> Point a -> Point a
-sumPoints = todo "1.2 sumPoints"
+sumPoints p1 p2 p3 = (+) <$> ((+) <$> p1 <*> p2) <*> p3
 
 
 -- 1.3. Список вычислений.
@@ -85,10 +94,17 @@ data User = User { subscribed :: Bool }
 type Registry = Map UserId User
 
 allResults :: Applicative f => [f a] -> f [a]
-allResults = todo "1.3 allResults"
+allResults s = case s of
+  [] -> pure []
+  (x : xs) -> (:) <$> x <*> allResults xs
+
+checkContains :: Registry -> [UserId] -> [Maybe Bool] 
+checkContains r c = case c of 
+  [] -> []
+  (x : xs) -> (subscribed <$> Map.lookup (x) r) : checkContains r xs
 
 check :: Registry -> [UserId] -> Maybe Bool
-check = todo "1.3 check"
+check r c = and <$> allResults (checkContains r c)
 
 
 -- 1.4. Чтение нескольких чисел.
@@ -105,4 +121,4 @@ check = todo "1.3 check"
 --   runMyIO (readInts 2) (world [2, 5, 8]) == (world [8], [2, 5])
 
 readInts :: Int -> MyIO [Int]
-readInts = todo "1.4"
+readInts n = allResults (replicate n readInt)
